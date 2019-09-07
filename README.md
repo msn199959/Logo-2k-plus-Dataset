@@ -28,5 +28,5 @@ http://www.victor.sdnu.edu.cn/datasets/Logo2K.htm \
 Baidu drive download line: \
 https://pan.baidu.com/s/1bkb3rwpvx5-iZn8mgBnYiw \
 Google drive download line: \
-https://drive.google.com/drive/folders/1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6?usp=sharing \
+https://drive.google.com/drive/folders/1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6?usp=sharing 
 
