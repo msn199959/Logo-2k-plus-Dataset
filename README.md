@@ -1,4 +1,4 @@
-# Logo-2K+:A Large-Scale Logo Dataset for Scalable Logo Classiﬁcation
+# <p align="center"> Logo-2K+:A Large-Scale Logo Dataset for Scalable Logo Classiﬁcation </p>
 
 ## Logo-2k+ Dataset
 ![example](logo/example.png)\
