@@ -25,7 +25,7 @@ The statistic comparison of 10 root categories from Logo-2K+ is shown as follows
 ## Logo-2k+ Dataset download
 Logo-2k+ Dataset website: \
 http://www.victor.sdnu.edu.cn/datasets/Logo2K.htm \
-Baidu drive download line: \
+Baidu drive download link: \
 https://pan.baidu.com/s/1NuwYPKkZoR0BksFANDJGKQ  password: zxf0 \
-Google drive download line: \
+Google drive download link: \
 https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6  
