@@ -28,4 +28,4 @@ http://www.victor.sdnu.edu.cn/datasets/Logo2K.htm \
 Baidu drive download line: \
 https://pan.baidu.com/s/1NuwYPKkZoR0BksFANDJGKQ  password: zxf0 \
 Google drive download line: \
-https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6  \
+https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6  
