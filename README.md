@@ -22,6 +22,9 @@ The statistic comparison of 10 root categories from Logo-2K+ is shown as follows
 |Medical        |    48         |  3,385 |
 |Total          |    2,341      |167,140 | 
 
+## DRNA code
+The DRNA code was uploaded in drna-master folder, please read readme before using the DRNA code!
+
 ## Logo-2k+ Dataset download
 Logo-2k+ Dataset website: \
 http://www.victor.sdnu.edu.cn/datasets/Logo2K.htm \
