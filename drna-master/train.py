@@ -1,0 +1,205 @@
+import os
+import torch.utils.data
+import torch.nn.functional as F
+from torchvision import transforms
+from torch.nn import DataParallel
+from datetime import datetime
+from torch.optim.lr_scheduler import MultiStepLR
+from config import BATCH_SIZE, PROPOSAL_NUM, SAVE_FREQ, LR, WD, resume, save_dir, INPUT_SIZE
+from core import model_densenet as model
+#from core import model_resnet as model
+#from core import model_vgg as model
+from core import data_loader
+from core.utils import init_log, progress_bar
+from PIL import Image
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
+start_epoch = 1
+save_dir = os.path.join(save_dir, datetime.now().strftime('%Y%m%d_%H%M%S'))
+if os.path.exists(save_dir):
+    raise NameError('model dir exists!')
+os.makedirs(save_dir)
+logging = init_log(save_dir)
+_print = logging.info
+
+train_transform = transforms.Compose([
+    transforms.Resize((600, 600), Image.BILINEAR),
+    transforms.RandomCrop(INPUT_SIZE),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                 std=(0.229, 0.224, 0.225))
+    ])
+test_transform = transforms.Compose([
+    transforms.Resize((600, 600), Image.BILINEAR),
+    transforms.CenterCrop(INPUT_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                 std=(0.229, 0.224, 0.225))
+    ])
+trainset = data_loader.GetLoader(data_root='../data/image/',
+                    data_list='train.txt',
+                    transform=train_transform)
+# print(len(trainset.labels))
+
+testset = data_loader.GetLoader(data_root='../data/image/',
+                data_list='test.txt',
+                transform=test_transform)
+# print(len(testset.labels))
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=BATCH_SIZE,
+                                          shuffle=True, num_workers=4, drop_last=False)
+testloader = torch.utils.data.DataLoader(testset, batch_size=BATCH_SIZE,
+                                         shuffle=False, num_workers=4, drop_last=False)
+theta_c = 0.5
+theta_d = 0.5
+crop_size = (224, 224)
+# define model
+net = model.attention_net(topN=PROPOSAL_NUM)
+if resume:
+    ckpt = torch.load(resume)
+    net.load_state_dict(ckpt['net_state_dict'])
+    start_epoch = ckpt['epoch'] + 1
+creterion = torch.nn.CrossEntropyLoss()
+
+# define optimizers
+raw_parameters = list(net.pretrained_model.parameters())
+aug_parameters = list(net.aug_net.parameters())
+part_parameters = list(net.proposal_net.parameters())
+concat_parameters = list(net.concat_net.parameters())
+partcls_parameters = list(net.partcls_net.parameters())
+
+raw_optimizer = torch.optim.SGD(raw_parameters, lr=LR, momentum=0.9, weight_decay=WD)
+aug_optimizer = torch.optim.SGD(aug_parameters, lr=LR, momentum=0.9, weight_decay=WD)
+concat_optimizer = torch.optim.SGD(concat_parameters, lr=LR, momentum=0.9, weight_decay=WD)
+part_optimizer = torch.optim.SGD(part_parameters, lr=LR, momentum=0.9, weight_decay=WD)
+partcls_optimizer = torch.optim.SGD(partcls_parameters, lr=LR, momentum=0.9, weight_decay=WD)
+schedulers = [MultiStepLR(raw_optimizer, milestones=[60, 100], gamma=0.1),
+              MultiStepLR(raw_optimizer, milestones=[60, 100], gamma=0.1),
+              MultiStepLR(concat_optimizer, milestones=[60, 100], gamma=0.1),
+              MultiStepLR(part_optimizer, milestones=[60, 100], gamma=0.1),
+              MultiStepLR(partcls_optimizer, milestones=[60, 100], gamma=0.1)]
+net = net.cuda()
+net = DataParallel(net)
+
+for epoch in range(start_epoch, 100):
+    for scheduler in schedulers:
+        scheduler.step()
+
+    # begin training
+    _print('--' * 50)
+    net.train()
+    for i, data in enumerate(trainloader):
+        img, label = data[0].cuda(), data[1].cuda()
+        batch_size = img.size(0)
+        attention_map = net(img)
+        with torch.no_grad():
+            crop_mask = F.upsample_bilinear(attention_map, size=(img.size(2), img.size(3))) > theta_c
+            for batch_index in range(crop_mask.size(0)):
+                nonzero_indices = torch.nonzero(crop_mask[batch_index, 0, ...])
+                height_min = nonzero_indices[:, 0].min()
+                height_max = nonzero_indices[:, 0].max()
+                width_min = nonzero_indices[:, 1].min()
+                width_max = nonzero_indices[:, 1].max()
+                crop_images.append(F.upsample_bilinear(img[batch_index:batch_index + 1, :, height_min:height_max, width_min:width_max], size=crop_size))
+            crop_images = torch.cat(crop_images, dim=0)
+
+        with torch.no_grad():
+            drop_mask = F.upsample_bilinear(attention_map, size=(img.size(2), img.size(3))) <= theta_d
+            drop_images = img * drop_mask.float()
+
+        raw_optimizer.zero_grad()
+        aug_optimizer.zero_grad()
+        part_optimizer.zero_grad()
+        concat_optimizer.zero_grad()
+        partcls_optimizer.zero_grad()
+
+        raw_logits, aug_logits, concat_logits, part_logits, _, top_n_prob = net(img)
+        part_loss = model.list_loss(part_logits.view(batch_size * PROPOSAL_NUM, -1),
+                                    label.unsqueeze(1).repeat(1, PROPOSAL_NUM).view(-1)).view(batch_size, PROPOSAL_NUM)
+        raw_loss = creterion(raw_logits, label)
+        aug_loss = creterion(aug_logits, label)
+        concat_loss = creterion(concat_logits, label)
+        rank_loss = model.ranking_loss(top_n_prob, part_loss)
+        partcls_loss = creterion(part_logits.view(batch_size * PROPOSAL_NUM, -1),
+                                 label.unsqueeze(1).repeat(1, PROPOSAL_NUM).view(-1))
+
+        total_loss = raw_loss + rank_loss + aug_loss + concat_loss + partcls_loss
+        total_loss.backward()
+        raw_optimizer.step()
+        aug_optimizer.step()
+        part_optimizer.step()
+        concat_optimizer.step()
+        partcls_optimizer.step()
+        progress_bar(i, len(trainloader), 'train')
+
+
+    if epoch % SAVE_FREQ == 0:
+        train_loss = 0
+        train_correct = 0
+        total = 0
+        net.eval()
+        for i, data in enumerate(trainloader):
+            with torch.no_grad():
+                img, label = data[0].cuda(), data[1].cuda()
+                batch_size = img.size(0)
+                _, concat_logits, _, _, _ = net(img)
+                # calculate loss
+                concat_loss = creterion(concat_logits, label)
+                # calculate accuracy
+                _, concat_predict = torch.max(concat_logits, 1)
+                total += batch_size
+                train_correct += torch.sum(concat_predict.data == label.data)
+                train_loss += concat_loss.item() * batch_size
+                progress_bar(i, len(trainloader), 'eval train set')
+
+        train_acc = float(train_correct) / total
+        train_loss = train_loss / total
+
+        _print(
+            'epoch:{} - train loss: {:.3f} and train acc: {:.3f} total sample: {}'.format(
+                epoch,
+                train_loss,
+                train_acc,
+                total))
+
+	# evaluate on test set
+        test_loss = 0
+        test_correct = 0
+        total = 0
+        for i, data in enumerate(testloader):
+            with torch.no_grad():
+                img, label = data[0].cuda(), data[1].cuda()
+                batch_size = img.size(0)
+                _, concat_logits, _, _, _ = net(img)
+                # calculate loss
+                concat_loss = creterion(concat_logits, label)
+                # calculate accuracy
+                _, concat_predict = torch.max(concat_logits, 1)
+                total += batch_size
+                test_correct += torch.sum(concat_predict.data == label.data)
+                test_loss += concat_loss.item() * batch_size
+                progress_bar(i, len(testloader), 'eval test set')
+
+        test_acc = float(test_correct) / total
+        test_loss = test_loss / total
+        _print(
+            'epoch:{} - test loss: {:.3f} and test acc: {:.3f} total sample: {}'.format(
+                epoch,
+                test_loss,
+                test_acc,
+                total))
+
+	# save model
+        net_state_dict = net.module.state_dict()
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+        torch.save({
+            'epoch': epoch,
+            'train_loss': train_loss,
+            'train_acc': train_acc,
+            'test_loss': test_loss,
+            'test_acc': test_acc,
+            'net_state_dict': net_state_dict},
+            os.path.join(save_dir, '%03d.ckpt' % epoch))
+
+print('finishing training')
