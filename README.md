@@ -61,5 +61,4 @@ booktitle={AAAI Conference on Artificial Intelligence. Accepted},
 title={{Logo-2K+:} A Large-Scale Logo Dataset for Scalable Logo Classification},
 year={2020}
 }
-
 ```
