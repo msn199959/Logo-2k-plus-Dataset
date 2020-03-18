@@ -22,6 +22,10 @@ The statistic comparison of 10 root categories from Logo-2K+ is shown as follows
 |Medical        |    48         |  3,385 |
 |Total          |    2,341      |167,140 | 
 
+## Download links
+Baidu Drive link:https://pan.baidu.com/s/11G2CI6zUvb700_nygUjs4Q  passwod: plbq \
+Google Drive link:https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6 \
+
 # DRNA-Net
 
 This is a PyTorch implementation of the AAAI2020 paper "Logo-2K+: A Large-Scale Logo Dataset for Scalable Logo Classification".
