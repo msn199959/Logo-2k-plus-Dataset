@@ -23,9 +23,9 @@ The statistic comparison of 10 root categories from Logo-2K+ is shown as follows
 |Total          |    2,341      |167,140 | 
 
 ## Download links
-Baidu Drive link:https://pan.baidu.com/s/11G2CI6zUvb700_nygUjs4Q  passwod: plbq \
+Baidu Drive link: https://pan.baidu.com/s/11G2CI6zUvb700_nygUjs4Q  password: plbq 
 
-Google Drive link:https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6 
+Google Drive link: https://drive.google.com/open?id=1PTA24UTZcsnzXPN1gmV0_lRg3lMHqwp6 
 
 # DRNA-Net
 
