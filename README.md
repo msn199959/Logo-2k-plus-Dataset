@@ -64,18 +64,4 @@ booktitle={AAAI Conference on Artificial Intelligence. Accepted},
 title={{Logo-2K+:} A Large-Scale Logo Dataset for Scalable Logo Classification},
 year={2020}
 }
-@inproceedings{Yang2018Learning,
-author = {Yang, Ze and Luo, Tiange and Wang, Dong and Hu, Zhiqiang and Gao, Jun and Wang, Liwei},
-year = {2018},
-title = {Learning to Navigate for Fine-grained Classification},
-booktitle = {European Conference on Computer Vision},
-pages ={438-454}
-}
-@article{Hu2019See,
-author = {Tao Hu and Honggang Qi and Qingming Huang and Yan Lu},
-title = {See Better Before Looking Closer: Weakly Supervised Data Augmentation Network for Fine-Grained Visual Classification},
-booktitle = {CoRR Computing Research Repository},
-year = {2019},
-journal = {arXiv:1901.09891}
-}
 ```
