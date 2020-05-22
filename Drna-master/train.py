@@ -6,7 +6,7 @@ from torch.nn import DataParallel
 from datetime import datetime
 from torch.optim.lr_scheduler import MultiStepLR
 from config import BATCH_SIZE, PROPOSAL_NUM, SAVE_FREQ, LR, WD, resume, save_dir, INPUT_SIZE
-#from core import model_densenet as model
+
 from core import model_resnet as model
 #from core import model_vgg as model
 from core import data_loader
