@@ -1,6 +1,6 @@
 # <p align="center"> Logo-2K+:A Large-Scale Logo Dataset for Scalable Logo Classiﬁcation </p>
 
-## The dataset link has been shifted and maintained by this URL https://github.com/Wangjing1551/Logo-2k-plus-Dataset 
+The dataset link has been shifted and maintained by this URL https://github.com/Wangjing1551/Logo-2k-plus-Dataset 
 
 ## Logo-2k+ Dataset
 ![example](logo/example.png)\
